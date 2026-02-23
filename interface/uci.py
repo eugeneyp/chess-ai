@@ -226,16 +226,14 @@ class UciHandler:
             """
             try:
                 start = time.monotonic()
-                move, score, depth = get_best_move(board_copy, time_ms, stop_event)
+                move, score, depth, nodes = get_best_move(board_copy, time_ms, stop_event)
                 elapsed_ms = max(1, int((time.monotonic() - start) * 1000))
 
                 if move is not None:
-                    # Approximate NPS: we searched 1 node per elapsed ms (v1).
-                    # Future versions will report actual node counts.
-                    nps = max(1, 1000 // elapsed_ms)
+                    nps = max(1, nodes * 1000 // elapsed_ms)
                     _send(
                         f"info depth {depth} score cp {score} "
-                        f"nodes 1 nps {nps} time {elapsed_ms}"
+                        f"nodes {nodes} nps {nps} time {elapsed_ms}"
                     )
                     _send(f"bestmove {move.uci()}")
                 else:

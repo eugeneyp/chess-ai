@@ -24,7 +24,11 @@ RESULTS_DIR="${REPO_ROOT}/results"
 FASTCHESS="${REPO_ROOT}/tools/fastchess"
 PYTHON="/tmp/chess-venv/bin/python3"
 ENGINE_SCRIPT="${REPO_ROOT}/interface/uci.py"
-ENGINE_NAME="ChessAI-v1"
+ENGINE_NAME="ChessAI-v2"
+
+# Snapshot scripts (self-contained, no engine/ imports)
+ENGINE_V1="${REPO_ROOT}/snapshots/engine_v1.py"
+ENGINE_V2="${REPO_ROOT}/snapshots/engine_v2.py"
 
 # Time control: 10 seconds + 0.1 second increment per move.
 # This is fast enough for 100 games to complete in ~30 minutes while
@@ -65,6 +69,34 @@ MODE="${1:-self}"
 
 case "${MODE}" in
 
+  v2_vs_v1)
+    # -----------------------------------------------------------------------
+    # Benchmark v2 (negamax depth 3) vs v1 (random mover).
+    # Both engines are standalone snapshot scripts — frozen, self-contained.
+    # A strong v2 win rate confirms negamax + material eval beats random play.
+    # Expected: v2 wins >90% of games (any search beats a random mover).
+    #
+    # Time control: 10 seconds per move (not per game). This ensures v2 gets
+    # enough time to complete the depth-3 search (~8-9 seconds on CPython)
+    # rather than timing out mid-search. v1 (random mover) is instantaneous.
+    # Fewer rounds (10) since each game takes longer at st=10.
+    # -----------------------------------------------------------------------
+    V2_ROUNDS=10
+    echo "Starting v2 vs v1 benchmark (${V2_ROUNDS} rounds x 2 games, st=10)..."
+    PGN="${RESULTS_DIR}/v2_vs_v1_${TS}.pgn"
+
+    "${FASTCHESS}" \
+      -engine cmd="${PYTHON}" args="${ENGINE_V2}" name="ChessAI-v2" proto=uci \
+      -engine cmd="${PYTHON}" args="${ENGINE_V1}" name="ChessAI-v1" proto=uci \
+      -each st=10 \
+      -rounds "${V2_ROUNDS}" \
+      -repeat \
+      -recover \
+      -pgnout "file=${PGN}"
+
+    echo "Done. PGN saved to: ${PGN}"
+    ;;
+
   self)
     # -----------------------------------------------------------------------
     # Self-play: engine plays itself to verify it runs without crashes.
@@ -88,32 +120,67 @@ case "${MODE}" in
 
   stockfish)
     # -----------------------------------------------------------------------
-    # vs Stockfish limited to ELO 1000.
-    # Measures approximate engine strength. A random mover (~0 ELO) will lose
-    # nearly all games against a 1320 ELO engine.
-    # After adding alpha-beta + eval, aim for >5% wins vs Stockfish 1320.
-    # Note: Stockfish 18 minimum UCI_Elo is 1320 (range: 1320-3190).
+    # Benchmark the current engine snapshot vs Stockfish at a known ELO.
+    # Measures absolute engine strength via score% → ELO formula.
+    #
+    # Stockfish minimum UCI_Elo is 1320 (range: 1320-3190).
+    # Arguments (all optional):
+    #   $2 = Stockfish ELO (default 1320)
+    #   $3 = Number of rounds (default 10 → 20 games; use 1 for a single game)
+    # Examples:
+    #   ./tools/run_tournament.sh stockfish          # 20 games vs SF1320
+    #   ./tools/run_tournament.sh stockfish 1320 1   # 1 game vs SF1320 (verification)
+    #   ./tools/run_tournament.sh stockfish 1500     # 20 games vs SF1500
+    #
+    # ELO estimate formula:
+    #   Elo ≈ SF_Elo − 400 × log10((1 − score%) / score%)
+    #   5%  score vs 1320 → ~808 ELO
+    #   10% score vs 1320 → ~939 ELO
+    #   20% score vs 1320 → ~1040 ELO
+    #   50% score vs 1320 → 1320 ELO (equal strength)
+    #
+    # Time control: st=30 (30 seconds per move).
+    # Our depth-3 negamax takes ~8-9s on CPython; Stockfish's UCI_LimitStrength
+    # mode adds an artificial thinking delay that requires >10s at low ELO.
+    # 30s gives comfortable margin for both.
     # -----------------------------------------------------------------------
     if ! command -v stockfish &>/dev/null; then
         echo "Error: stockfish not found on PATH. Install with: brew install stockfish"
         exit 1
     fi
 
-    echo "Starting tournament vs Stockfish ELO 1000 (${ROUNDS} rounds, tc=${TIME_CONTROL})..."
-    PGN="${RESULTS_DIR}/vs_sf1000_${TS}.pgn"
+    SF_ELO="${2:-1320}"
+    SF_ROUNDS="${3:-10}"
+
+    # For a single-game run (rounds=1) play only one color pairing.
+    # For multi-round runs, use -repeat to play both colors per round.
+    if [[ "${SF_ROUNDS}" -eq 1 ]]; then
+        REPEAT_FLAG="-games 1"
+        GAME_DESC="1 game"
+    else
+        REPEAT_FLAG="-repeat"
+        GAME_DESC="${SF_ROUNDS} rounds x 2 games"
+    fi
+
+    echo "Starting v2 vs Stockfish-${SF_ELO} (${GAME_DESC}, st=30)..."
+    PGN="${RESULTS_DIR}/vs_sf${SF_ELO}_${TS}.pgn"
 
     "${FASTCHESS}" \
-      -engine cmd="${PYTHON}" args="${ENGINE_SCRIPT}" name="${ENGINE_NAME}" proto=uci \
-      -engine cmd="stockfish" name="Stockfish-1320" proto=uci \
+      -engine cmd="${PYTHON}" args="${ENGINE_V2}" name="ChessAI-v2" proto=uci \
+      -engine cmd="stockfish" name="Stockfish-${SF_ELO}" proto=uci \
         option.UCI_LimitStrength=true \
-        option.UCI_Elo=1320 \
-      -each tc="${TIME_CONTROL}" \
-      -rounds "${ROUNDS}" \
-      -repeat \
+        option.UCI_Elo="${SF_ELO}" \
+      -each st=30 \
+      -rounds "${SF_ROUNDS}" \
+      ${REPEAT_FLAG} \
       -recover \
       -pgnout "file=${PGN}"
 
     echo "Done. PGN saved to: ${PGN}"
+    echo ""
+    echo "ELO estimate formula:"
+    echo "  Elo ≈ ${SF_ELO} - 400 * log10((1 - score%) / score%)"
+    echo "  e.g. 5% → ~808, 10% → ~939, 20% → ~1040, 50% → ${SF_ELO}"
     ;;
 
   sprt)
@@ -149,7 +216,7 @@ case "${MODE}" in
     ;;
 
   *)
-    echo "Usage: $0 [self|stockfish|sprt]"
+    echo "Usage: $0 [v2_vs_v1|self|stockfish|sprt]"
     exit 1
     ;;
 esac

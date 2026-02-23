@@ -23,7 +23,7 @@ This is a chess AI engine built from scratch in Python as a 5-day learning proje
 | Board logic | `python-chess` | 1.11.2 |
 | Web backend | FastAPI + uvicorn | Latest |
 | Web frontend | chessboard.js + chess.js | 1.0.0 / 1.0+ |
-| Testing | cutechess-cli | Latest |
+| Testing | fastchess | v1.8.0-alpha |
 | Optional speedup | PyPy | 3.10+ |
 
 ---
@@ -69,7 +69,7 @@ chess-ai/
 │   └── gm2001.bin             # Polyglot opening book
 │
 ├── tools/                     # Development utilities
-│   ├── run_tournament.sh      # cutechess-cli wrapper
+│   ├── run_tournament.sh      # fastchess wrapper
 │   ├── run_sprt.sh            # SPRT testing wrapper
 │   └── elo_tracker.py         # Log and plot ELO progression
 │
@@ -273,7 +273,7 @@ This module implements:
 4. **Never print to stdout in UCI mode** except for valid UCI responses. Debug output goes to stderr.
 5. **Never call a fixed-depth search directly.** Always use iterative deepening with time management.
 6. **Never skip draw detection.** Check `board.is_game_over()`, `board.is_repetition()`, `board.is_fifty_moves()` at the top of the search function. Return 0 for draws.
-7. **Never test only by playing manually.** Use cutechess-cli with SPRT for statistically valid measurements.
+7. **Never test only by playing manually.** Use fastchess with SPRT for statistically valid measurements.
 8. **Never add a feature without SPRT validation.** If ELO doesn't improve after adding a feature, the implementation likely has a bug.
 9. **Never store the full board in the transposition table.** Store only the Zobrist hash (risk of collision is negligible at 64 bits).
 10. **Never forget to handle mate distance.** Score mates as `99999 - ply` so the engine prefers checkmate in 2 over checkmate in 5.
