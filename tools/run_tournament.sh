@@ -24,11 +24,12 @@ RESULTS_DIR="${REPO_ROOT}/results"
 FASTCHESS="${REPO_ROOT}/tools/fastchess"
 PYTHON="/tmp/chess-venv/bin/python3"
 ENGINE_SCRIPT="${REPO_ROOT}/interface/uci.py"
-ENGINE_NAME="ChessAI-v2"
+ENGINE_NAME="ChessAI-v3"
 
 # Snapshot scripts (self-contained, no engine/ imports)
 ENGINE_V1="${REPO_ROOT}/snapshots/engine_v1.py"
 ENGINE_V2="${REPO_ROOT}/snapshots/engine_v2.py"
+ENGINE_V3="${REPO_ROOT}/snapshots/engine_v3.py"
 
 # Time control: 10 seconds + 0.1 second increment per move.
 # This is fast enough for 100 games to complete in ~30 minutes while
@@ -139,10 +140,12 @@ case "${MODE}" in
     #   20% score vs 1320 → ~1040 ELO
     #   50% score vs 1320 → 1320 ELO (equal strength)
     #
-    # Time control: st=30 (30 seconds per move).
-    # Our depth-3 negamax takes ~8-9s on CPython; Stockfish's UCI_LimitStrength
-    # mode adds an artificial thinking delay that requires >10s at low ELO.
-    # 30s gives comfortable margin for both.
+    # Time control: tc=120+1 (2 minutes per game + 1s increment).
+    # Stockfish's UCI_LimitStrength mode manages its own time per move and
+    # consistently overshoots per-move (st=N) limits by a few milliseconds,
+    # causing spurious time-forfeit losses. Using game-time (tc) lets
+    # Stockfish self-manage and avoids false timeouts.
+    # Our depth-3 alpha-beta engine uses ~150ms/move so 2 minutes is ample.
     # -----------------------------------------------------------------------
     if ! command -v stockfish &>/dev/null; then
         echo "Error: stockfish not found on PATH. Install with: brew install stockfish"
@@ -162,15 +165,15 @@ case "${MODE}" in
         GAME_DESC="${SF_ROUNDS} rounds x 2 games"
     fi
 
-    echo "Starting v2 vs Stockfish-${SF_ELO} (${GAME_DESC}, st=30)..."
+    echo "Starting ChessAI vs Stockfish-${SF_ELO} (${GAME_DESC}, tc=120+1)..."
     PGN="${RESULTS_DIR}/vs_sf${SF_ELO}_${TS}.pgn"
 
     "${FASTCHESS}" \
-      -engine cmd="${PYTHON}" args="${ENGINE_V2}" name="ChessAI-v2" proto=uci \
+      -engine cmd="${PYTHON}" args="${ENGINE_SCRIPT}" name="${ENGINE_NAME}" proto=uci \
       -engine cmd="stockfish" name="Stockfish-${SF_ELO}" proto=uci \
         option.UCI_LimitStrength=true \
         option.UCI_Elo="${SF_ELO}" \
-      -each st=30 \
+      -each tc=120+1 \
       -rounds "${SF_ROUNDS}" \
       ${REPEAT_FLAG} \
       -recover \

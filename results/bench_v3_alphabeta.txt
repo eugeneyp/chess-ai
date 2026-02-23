@@ -1,0 +1,19 @@
+Chess AI engine benchmark — /private/tmp/chess-venv/bin/python3
+Engine: /Users/eugenep/git/chess-ai/interface/uci.py
+
+Position       Move    Depth  Score    Nodes      NPS  Time(ms)
+--------------------------------------------------------------------
+Start          g1h3        3      0      581    7,262        80
+After 1.e4     g8h6        3      0      833   12,815        65
+Sicilian       f1b5        3    100    1,225   15,705        78
+Italian        g8f6        3    100    3,175   12,258       259
+London         c8f5        3    100    3,123    9,406       332
+Mid-open       c4b5        3    100    1,855   20,384        91
+Complex mid    g5f6        3     90   10,194   19,089       534
+Queen ending   g1h1        3      0      264   26,400        10
+Rook ending    g2h3        3      0      155    6,200        25
+Pawn race      c5b6        3      0       91    7,583        12
+--------------------------------------------------------------------
+AVERAGE                                2,149   13,710       148
+
+Run this script again after adding alpha-beta to measure node reduction.
