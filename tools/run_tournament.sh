@@ -140,12 +140,12 @@ case "${MODE}" in
     #   20% score vs 1320 → ~1040 ELO
     #   50% score vs 1320 → 1320 ELO (equal strength)
     #
-    # Time control: tc=120+1 (2 minutes per game + 1s increment).
-    # Stockfish's UCI_LimitStrength mode manages its own time per move and
-    # consistently overshoots per-move (st=N) limits by a few milliseconds,
-    # causing spurious time-forfeit losses. Using game-time (tc) lets
-    # Stockfish self-manage and avoids false timeouts.
-    # Our depth-3 alpha-beta engine uses ~150ms/move so 2 minutes is ample.
+    # Time control: tc=15+0.1 (15 seconds per game + 0.1s increment).
+    # Stockfish's UCI_LimitStrength mode must use game-time (tc), not per-move
+    # (st=N), because it consistently overshoots per-move limits by ~1ms,
+    # causing spurious time-forfeit losses. tc=10+0.1 was too tight for v3
+    # (Python startup overhead ~1s). tc=15+0.1 keeps games to ~28s each;
+    # Stockfish occasionally overshoots (~1/6 games) but -recover handles it.
     # -----------------------------------------------------------------------
     if ! command -v stockfish &>/dev/null; then
         echo "Error: stockfish not found on PATH. Install with: brew install stockfish"
@@ -165,7 +165,7 @@ case "${MODE}" in
         GAME_DESC="${SF_ROUNDS} rounds x 2 games"
     fi
 
-    echo "Starting ChessAI vs Stockfish-${SF_ELO} (${GAME_DESC}, tc=120+1)..."
+    echo "Starting ChessAI vs Stockfish-${SF_ELO} (${GAME_DESC}, tc=15+0.1)..."
     PGN="${RESULTS_DIR}/vs_sf${SF_ELO}_${TS}.pgn"
 
     "${FASTCHESS}" \
@@ -173,7 +173,7 @@ case "${MODE}" in
       -engine cmd="stockfish" name="Stockfish-${SF_ELO}" proto=uci \
         option.UCI_LimitStrength=true \
         option.UCI_Elo="${SF_ELO}" \
-      -each tc=120+1 \
+      -each tc=15+0.1 \
       -rounds "${SF_ROUNDS}" \
       ${REPEAT_FLAG} \
       -recover \
