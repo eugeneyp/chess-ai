@@ -1,77 +1,98 @@
 """
-Material evaluation: the simplest possible chess evaluation function.
+Tapered PeSTO evaluation: positional scoring with middlegame/endgame interpolation.
 
 A chess engine needs to assign a numeric score to any board position so the
 search function can compare moves and choose the best one. This module
-implements the most fundamental evaluation: count the material on the board.
+implements tapered evaluation using PeSTO piece-square tables (PSTs).
 
-Material counting works because pieces have well-established relative values
-(a rook is worth roughly 5 pawns, a queen roughly 9). A position where one
-side has more material is generally won for that side. This simple heuristic
-is surprisingly effective and forms the foundation of all stronger evaluations.
+Pure material counting (v3) treats all positions with equal material as equal.
+PeSTO adds positional awareness: knights are rewarded for central squares,
+rooks are rewarded on open files, kings are rewarded for castled positions in
+the middlegame but active central positions in the endgame.
+
+Tapered evaluation blends two separate PST sets:
+- Middlegame (MG): prioritizes king safety, piece activity, pawn structure
+- Endgame (EG): prioritizes king centralization, passed pawns, rook activity
+
+The blend is controlled by a game-phase score based on remaining non-pawn
+material. A fresh position is fully middlegame (phase=24); a K+P vs K endgame
+is fully endgame (phase=0). All positions in between are interpolated linearly.
 
 The score is always returned from the perspective of the side to move. This is
 the negamax convention: the search always tries to maximize the score, and a
 positive score means the current side is ahead. The caller negates the score
 when recursing, so the convention propagates automatically.
-
-Future improvements (added in later steps):
-- Piece-square tables (PeSTO): positional bonuses for piece placement
-- Tapered evaluation: blend middlegame and endgame tables by phase
-- Pawn structure: doubled, isolated, and passed pawn penalties/bonuses
-- King safety: penalize exposed kings, reward castled/sheltered positions
 """
 
 import chess
 
-from engine.constants import PIECE_VALUES
+from engine.constants import PIECE_VALUES, PST, PHASE_WEIGHTS, MAX_PHASE
 
 
 def evaluate(board: chess.Board) -> int:
     """
-    Centipawn evaluation of the current position from the side-to-move's perspective.
+    Tapered centipawn evaluation from the side-to-move's perspective.
 
-    Counts the total material for each side using standard piece values
-    (P=100, N=320, B=330, R=500, Q=900). The king is excluded from material
-    counting because it can never be traded — its value in constants.py is
-    only used for move ordering purposes.
+    Scores each piece using PeSTO piece-square tables, then interpolates
+    between middlegame and endgame scores based on remaining non-pawn material.
 
-    A positive return value means the side to move is ahead in material.
-    A negative return value means the side to move is behind.
-    Zero means the position is materially equal (including the starting position).
+    The square indexing convention for PST lookup:
+        - White piece on square sq: use index sq ^ 56 (flip rank, since PST
+          index 0 = a8 visually but python-chess a1=0 is at the bottom)
+        - Black piece on square sq: use index sq directly (already mirrored)
 
     Args:
         board: The current board position. Not modified.
 
     Returns:
         Centipawn score from the side-to-move's perspective.
-        Range: roughly -10000 (hopelessly losing) to +10000 (overwhelming advantage).
+        Positive = side to move is ahead. Range: roughly -10000 to +10000.
 
     Example:
         >>> import chess
         >>> b = chess.Board()
-        >>> evaluate(b)  # starting position is equal
+        >>> evaluate(b)  # starting position should be approximately equal
         0
-        >>> b.remove_piece_at(chess.D8)  # remove black queen
-        >>> evaluate(b)  # white to move, white is +900 (a queen ahead)
-        900
-        >>> b.turn = chess.BLACK
-        >>> evaluate(b)  # black to move, black is -900 (a queen behind)
-        -900
     """
-    white_material = 0
-    black_material = 0
+    mg_score = 0  # middlegame score accumulated (White minus Black)
+    eg_score = 0  # endgame score accumulated (White minus Black)
+    phase = 0     # game phase: 0 = full endgame, MAX_PHASE = full middlegame
 
-    # Sum material for each non-king piece type.
-    # board.pieces(piece_type, color) returns a SquareSet; len() gives the count.
-    # This is more efficient than iterating over all squares.
-    for piece_type in (chess.PAWN, chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN):
-        value = PIECE_VALUES[piece_type]
-        white_material += len(board.pieces(piece_type, chess.WHITE)) * value
-        black_material += len(board.pieces(piece_type, chess.BLACK)) * value
+    for sq in chess.SQUARES:
+        piece = board.piece_at(sq)
+        if piece is None:
+            continue
 
-    # score > 0 means white is ahead; score < 0 means black is ahead.
-    score = white_material - black_material
+        pt = piece.piece_type
+        mg_table, eg_table = PST[pt]
 
-    # Convert to side-to-move perspective: negate if black is to move.
-    return score if board.turn == chess.WHITE else -score
+        # King material value is excluded from positional scoring — the king is
+        # never traded, so its "value" is only used for move ordering. Only the
+        # PST bonus applies for king placement.
+        material = 0 if pt == chess.KING else PIECE_VALUES[pt]
+
+        if piece.color == chess.WHITE:
+            # Mirror the square vertically: PST row 0 = rank 8 (visual top),
+            # but python-chess square 0 = a1 (rank 1). XOR with 56 flips the rank.
+            idx = sq ^ 56
+            mg_score += material + mg_table[idx]
+            eg_score += material + eg_table[idx]
+        else:
+            # Black pieces: use the square directly (PST is written from Black's
+            # perspective already — index 0 = a8 corresponds to a8 for Black).
+            idx = sq
+            mg_score -= material + mg_table[idx]
+            eg_score -= material + eg_table[idx]
+
+        # Accumulate phase counter from non-pawn, non-king pieces.
+        phase += PHASE_WEIGHTS.get(pt, 0)
+
+    # Clamp phase to MAX_PHASE (a double queen promotion could theoretically exceed it).
+    phase = min(phase, MAX_PHASE)
+
+    # Tapered blend: more phase = more middlegame weight; less phase = more endgame weight.
+    # Uses integer arithmetic throughout (no floats).
+    tapered = (mg_score * phase + eg_score * (MAX_PHASE - phase)) // MAX_PHASE
+
+    # Convert to side-to-move perspective (negamax convention).
+    return tapered if board.turn == chess.WHITE else -tapered
