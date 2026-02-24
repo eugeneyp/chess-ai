@@ -195,6 +195,17 @@ button#new-game-btn:active {
   opacity: 0.7;
 }
 
+/* --- Footer -------------------------------------------------------------- */
+
+footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+}
+
 /* --- Mobile layout ------------------------------------------------------- */
 
 @media (max-width: 640px) {

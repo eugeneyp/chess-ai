@@ -120,15 +120,6 @@ function requestEngineMove() {
       game.move({ from: from, to: to, promotion: promo });
       board.position(game.fen());
 
-      // Update score display — score is from engine's (Black's) perspective;
-      // negate so that positive = engine is winning (shown as "Engine +X.X")
-      const scorePawns = (data.score / 100).toFixed(1);
-      const scoreSign  = data.score >= 0 ? '+' : '';
-      document.getElementById('score-text').textContent =
-        scoreSign + scorePawns + ' (engine)';
-
-      document.getElementById('depth-text').textContent = data.depth;
-
       isThinking = false;
       updateStatus();
     })
@@ -196,8 +187,6 @@ function setStatus(text) {
 function newGame() {
   game.reset();
   board.start();
-  document.getElementById('score-text').textContent = '\u2014';
-  document.getElementById('depth-text').textContent = '\u2014';
   isThinking = false;
   setStatus('Your turn');
 }
@@ -217,7 +206,7 @@ $(document).ready(function () {
     onDragStart: onDragStart,
     onDrop: onDrop,
     onSnapEnd: onSnapEnd,
-    pieceTheme: 'https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+    pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
   };
 
   board = Chessboard('board', config);
