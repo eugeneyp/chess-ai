@@ -182,6 +182,22 @@ function setStatus(text) {
 }
 
 /**
+ * Undo the last two half-moves (engine's reply + player's move).
+ *
+ * Takes back one full exchange so it's the player's turn again.
+ * No-ops if the engine is thinking or fewer than 2 moves have been played.
+ */
+function takeBack() {
+  if (isThinking) return;
+  if (game.history().length < 2) return;
+
+  game.undo(); // removes engine's last move
+  game.undo(); // removes player's last move
+  board.position(game.fen());
+  updateStatus();
+}
+
+/**
  * Reset the game to the starting position and clear all UI state.
  */
 function newGame() {
@@ -211,6 +227,7 @@ $(document).ready(function () {
 
   board = Chessboard('board', config);
 
-  // Wire up the New Game button
+  // Wire up buttons
+  document.getElementById('take-back-btn').addEventListener('click', takeBack);
   document.getElementById('new-game-btn').addEventListener('click', newGame);
 });

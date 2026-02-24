@@ -177,6 +177,24 @@ select:focus {
   border-color: var(--accent);
 }
 
+button#take-back-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+button#take-back-btn:hover {
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+button#take-back-btn:active {
+  opacity: 0.7;
+}
+
 button#new-game-btn {
   background: var(--accent);
   color: #fff;
