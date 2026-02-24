@@ -1,0 +1,216 @@
+/* =========================================================================
+   Chess AI — dark-themed layout
+   ========================================================================= */
+
+/* --- Reset & base -------------------------------------------------------- */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:       #1a1a2e;
+  --panel:    #16213e;
+  --card:     #0f3460;
+  --accent:   #e94560;
+  --text:     #e0e0e0;
+  --muted:    #8892a4;
+  --border:   #2a3a5e;
+  --radius:   8px;
+  --font:     'Segoe UI', system-ui, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* --- Header -------------------------------------------------------------- */
+
+header {
+  text-align: center;
+  padding: 1.5rem 1rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+header .subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+/* --- Main layout --------------------------------------------------------- */
+
+main {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem 1.5rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* --- Board container ----------------------------------------------------- */
+
+#board-container {
+  flex-shrink: 0;
+}
+
+/*
+  chessboard.js requires an explicit width. The library infers square size
+  from the container width and sets its own inline width/height on the board
+  element. We set the container to 480px so each square is 60px.
+*/
+#board {
+  width: 480px;
+}
+
+/* --- Side panel ---------------------------------------------------------- */
+
+#panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 200px;
+  max-width: 240px;
+  flex: 1;
+}
+
+.panel-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+
+.card-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* --- Status box ---------------------------------------------------------- */
+
+#status-text {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* --- Info box (score / depth) ------------------------------------------- */
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.25rem 0;
+}
+
+.info-row + .info-row {
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+}
+
+.info-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.info-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* --- Controls ------------------------------------------------------------ */
+
+#controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+select,
+button {
+  width: 100%;
+  border-radius: calc(var(--radius) / 2);
+  border: 1px solid var(--border);
+  font-family: var(--font);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+}
+
+select {
+  background: var(--panel);
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238892a4' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+select:focus {
+  border-color: var(--accent);
+}
+
+button#new-game-btn {
+  background: var(--accent);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: opacity 0.15s;
+}
+
+button#new-game-btn:hover {
+  opacity: 0.85;
+}
+
+button#new-game-btn:active {
+  opacity: 0.7;
+}
+
+/* --- Mobile layout ------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  main {
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+
+  #board {
+    width: 320px;
+  }
+
+  #panel {
+    max-width: 320px;
+    width: 100%;
+  }
+}
