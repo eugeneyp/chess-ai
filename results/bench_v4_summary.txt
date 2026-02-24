@@ -1,0 +1,46 @@
+ChessAI v4 benchmark results
+============================================================
+Engine:     snapshots/engine_v4.py
+Features:   PeSTO tapered eval, quiescence search, MVV-LVA
+            move ordering, iterative deepening, time check
+            in quiescence (bug fix)
+
+------------------------------------------------------------
+Search depth (tc=60+1, 100 games vs Stockfish-1500)
+------------------------------------------------------------
+Total moves analysed: 4267
+Max depth reached:    6
+Min depth reached:    1
+Avg depth:            3.4
+
+  depth 1:     1 moves  (<1%)
+  depth 2:   348 moves  ( 8%)
+  depth 3:  2010 moves  (47%)
+  depth 4:  1649 moves  (39%)
+  depth 5:   248 moves  ( 6%)
+  depth 6:    11 moves  (<1%)
+
+------------------------------------------------------------
+Tournament vs Stockfish-1320, tc=15+0.1  (50 games)
+------------------------------------------------------------
+All games:    42W  7L  1D  (85.0%)  ELO ≈ 1621
+Clean games:  33W  7L  1D  (81.7%)  ELO ≈ 1580  [41 games, 9 SF timeouts excluded]
+v4 timeouts:  0
+PGN: v4_vs_sf1320_50g_20260223_204956.pgn
+
+------------------------------------------------------------
+Tournament vs Stockfish-1500, tc=60+1   (100 games)
+------------------------------------------------------------
+All games:    65W 27L  8D  (69.0%)  ELO ≈ 1639
+Clean games:  65W 27L  8D  (69.0%)  ELO ≈ 1639  [100 games, 0 timeouts]
+v4 timeouts:  0
+PGN: v4_vs_sf1500_100g_20260223_213527.pgn
+
+------------------------------------------------------------
+ELO progression
+------------------------------------------------------------
+v1 (random mover):               ~600  ELO  (estimated)
+v2 (negamax depth-3 + material): ~1200 ELO  (estimated from v2 vs v1: +436)
+v3 (+ alpha-beta pruning):        ~768 ELO  (measured vs SF-1320, tc=15+0.1)
+v4 (+ PeSTO + quiescence +        ~1580-1639 ELO  (measured vs SF-1320/1500)
+    MVV-LVA + iter. deepening):
