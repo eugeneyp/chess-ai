@@ -270,6 +270,14 @@ def quiescence(board: chess.Board, alpha: int, beta: int, ply: int, state: dict)
 
     state["nodes"] += 1
 
+    # Time check: must also check here — quiescence can dominate node counts
+    # in tactical positions, causing negamax's check to never fire.
+    if state["nodes"] % TIME_CHECK_NODES == 0:
+        elapsed_ms = (time.monotonic() - state["start_time"]) * 1000
+        if elapsed_ms >= state["time_limit_ms"] * TIME_USAGE_FRACTION:
+            state["stop"].set()
+            return 0
+
     stand_pat = evaluate(board)
     if stand_pat >= beta:
         return beta

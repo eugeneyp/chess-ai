@@ -162,6 +162,16 @@ def quiescence(
 
     state.node_count += 1
 
+    # Time check: quiescence can dominate node counts in tactical positions,
+    # so we must check time here too — not only in negamax. Without this check,
+    # a shallow depth with few negamax nodes but thousands of quiescence nodes
+    # will never trigger the negamax time check and runs completely unconstrained.
+    if state.node_count % TIME_CHECK_NODES == 0:
+        elapsed_ms = (time.monotonic() - state.start_time) * 1000
+        if elapsed_ms >= state.time_limit_ms * TIME_USAGE_FRACTION:
+            state.stop_event.set()
+            return 0
+
     # Stand-pat: evaluate the position without making any capture.
     # If the static eval already beats beta, we can prune immediately.
     stand_pat = evaluate(board)
