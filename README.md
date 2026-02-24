@@ -1,6 +1,6 @@
 # Chess AI
 
-A chess engine built from scratch in Python as a 5-day learning project. It implements
+A chess engine built from scratch in Python as a learning project. It implements
 classical search techniques used by real chess engines — negamax with alpha-beta pruning,
 quiescence search, MVV-LVA move ordering, and tapered PeSTO evaluation — and is playable
 via a web interface or the UCI protocol against other engines.
