@@ -20,6 +20,7 @@ via a web interface or the UCI protocol against other engines.
 - [Benchmarking with fastchess](#benchmarking-with-fastchess)
 - [Benchmark results](#benchmark-results)
 - [Roadmap](#roadmap)
+- [Acknowledgements](#acknowledgements)
 
 ---
 
@@ -384,6 +385,41 @@ Features are prioritized by ELO gain per implementation hour:
 | | Opening book (Polyglot) | +30–80 |
 | | History heuristic | +30–50 |
 | | PyPy runtime | +~250 (0 code changes) |
+
+---
+
+## Acknowledgements
+
+This project was built by studying the chess programming literature. The following
+resources directly informed the implementation:
+
+- **[Chess Programming Wiki](https://www.chessprogramming.org/)** — The primary reference
+  for every technique in this engine: negamax, alpha-beta pruning, quiescence search,
+  iterative deepening, MVV-LVA move ordering, Zobrist hashing, transposition tables,
+  killer moves, and null-move pruning. An invaluable resource for anyone learning engine
+  development from first principles.
+
+- **[PeSTO's Evaluation Function](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function)**
+  by Ronald Friederich — The piece-square tables used in `engine/constants.py` are PeSTO's
+  tuned middlegame and endgame PST values, which provide a strong positional foundation
+  without requiring a dedicated tuning phase.
+
+- **[python-chess](https://python-chess.readthedocs.io/)** by Niklas Fiekas — Handles all
+  board logic: move generation, castling, en passant, pin detection, draw detection, FEN
+  parsing, and Polyglot opening book support. Using a battle-tested library here was a
+  deliberate choice to keep the project focused on search and evaluation.
+
+- **[sunfish](https://github.com/thomasahle/sunfish)** by Thomas Ahle — A minimal,
+  readable Python chess engine that demonstrates how much can be accomplished in a small
+  amount of code. A useful reference point for pythonic chess engine structure.
+
+- **[Stockfish](https://stockfishchess.org/)** — Used as the benchmarking opponent via
+  `UCI_LimitStrength`. Stockfish's open development and the public visibility of its
+  techniques (null-move pruning, LMR, NNUE) provided useful context for understanding
+  what a production engine does beyond the basics.
+
+- **[fastchess](https://github.com/Disservin/fastchess)** by Disservin — The tournament
+  and SPRT testing tool used to measure ELO after each engine improvement.
 
 ---
 
