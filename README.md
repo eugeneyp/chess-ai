@@ -7,6 +7,8 @@ via a web interface or the UCI protocol against other engines.
 
 **Playing strength: ~1580–1640 ELO** (measured vs Stockfish with `UCI_LimitStrength`)
 
+**Play it live: [chess-ai-eu2i.onrender.com](https://chess-ai-eu2i.onrender.com)**
+
 ---
 
 ## Table of contents
